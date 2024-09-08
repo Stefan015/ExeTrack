@@ -35,13 +35,18 @@ SessionMenu >> addNewSession [
 	sessionNumber := normalList size + 1.
 	
 	weight := UIManager default request: 'Enter the weight used in the session'.
+	weight ifNil: [ ^ [ ] ].
+	weight ifEmpty: [ UIManager default inform: 'Field left empty.'. ^ [ ] ].
+		
 	repetitions := UIManager default request: 'Enter the number of repetitons performed'.
+	repetitions ifNil: [ ^ [ ] ].
+	repetitions ifEmpty: [ UIManager default inform: 'Field left empty.'. ^ [ ] ].
+	
 	sets := UIManager default request: 'Enter the number of sets done'.
-	
+	sets ifNil: [ ^ [ ] ].
+	sets ifEmpty: [ UIManager default inform: 'Field left empty.'. ^ [ ] ].
+
 	session := 'Session #', sessionNumber printString,' Weight used: ', weight,' Sets: ', sets,' Repetitions: ', repetitions.
-	
-	"Debug message to Transcript"
-	Transcript show: 'Session string: ';show: session; cr.
 
 	normalList add: session.
 	self writeListToFile: normalList.
@@ -61,8 +66,24 @@ SessionMenu >> ensureDirectoryExists: directoryPath [
 ]
 
 { #category : #'set and get' }
+SessionMenu >> getDirectoryPath [
+	| directoryPath |
+	directoryPath :=  (FileSystem workingDirectory) / 'exercises'.
+	^ directoryPath.
+]
+
+{ #category : #'set and get' }
 SessionMenu >> getExeName [ 
 	^ exerciseName.
+]
+
+{ #category : #'set and get' }
+SessionMenu >> getFilePath [
+	| filePath |
+	
+	filePath := self getDirectoryPath / (self getExeName, '.txt').
+	
+	^ filePath.
 ]
 
 { #category : #initialization }
@@ -77,12 +98,12 @@ SessionMenu >> loadSessionData [
 	
 	normalList := OrderedCollection new.
 	
-	directoryPath := '/exercises'.
+	directoryPath := self getDirectoryPath.
 	
-	self ensureDirectoryExists: directoryPath.
+	self ensureDirectoryExists: directoryPath .
 	
 	"file path"
-	filePath := directoryPath ,'/', self getExeName, '.txt'.
+	filePath := self getFilePath.
 	fileReference := filePath asFileReference.
 	
 	"if a file doesn't exist create a new empty one"
@@ -174,10 +195,9 @@ SessionMenu >> updateSelection: anItem [
 
 { #category : #actions }
 SessionMenu >> writeListToFile: aList [
-	| fileReference directoryPath filePath |
+	| fileReference filePath |
 	
-	directoryPath := '/exercises'.
-	filePath := directoryPath ,'/', self getExeName, '.txt'.
+	filePath := self getFilePath.
 	fileReference := filePath asFileReference.
 	
 	"write list to file"

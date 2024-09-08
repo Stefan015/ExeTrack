@@ -19,6 +19,10 @@ ExerciseMenu >> addNewExercise [
 	
 	newExerciseName := UIManager default request: 'Enter new exercise name:'.
     
+	"return if cancel pressed"
+	newExerciseName ifNil: [ ^ [  ]. ].
+
+	"if the field is empty dont add"
 	newExerciseName ifNotEmpty: [ 
 		"add new exercise"
 		normalList add: newExerciseName.
@@ -106,8 +110,15 @@ ExerciseMenu >> openSelected [
 	"takes the value from the pluggable list and calls session menu passing that value"
 	| sessionMenu exeName |
 
+	"returns if nothing is selected"
+	selectedItem ifNil: [
+		UIManager default inform: 'Please select an item first.'.
+		^ [ ].
+		].
+	
 	exeName := (normalList at: selectedItem).
 	
+	"open session menu with the selected exercise"
 	sessionMenu := SessionMenu newSessionWithName: exeName.
 	
 	sessionMenu openInWorld.
