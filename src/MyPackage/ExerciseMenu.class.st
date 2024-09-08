@@ -133,20 +133,23 @@ ExerciseMenu >> selectedItem [
 
 { #category : #'pluggable menus' }
 ExerciseMenu >> selectedItem: anItem [
-
+		
+		Transcript show: 'anItem in selectedItem: = '; show: anItem; cr.
+		
 		selectedItem := anItem.
 		self updateUI.
 ]
 
 { #category : #'pluggable menus' }
 ExerciseMenu >> updateSelection: anItem [
-
+		Transcript show: 'anItem = '; show: anItem; cr.
 		self selectedItem: anItem.
+		self updateUI.
 ]
 
 { #category : #'pluggable menus' }
 ExerciseMenu >> updateUI [
-    self update: exerciseList.
+	self update.
 ]
 
 { #category : #actions }
