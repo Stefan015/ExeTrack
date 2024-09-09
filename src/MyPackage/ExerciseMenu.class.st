@@ -6,6 +6,7 @@ Class {
 		'selectedItem',
 		'exerciseList',
 		'normalList',
+		'removeExerciseButton',
 		'addExerciseButton',
 		'addBackButton',
 		'openSelectedButton'
@@ -26,8 +27,10 @@ ExerciseMenu >> addNewExercise [
 	newExerciseName ifNotEmpty: [ 
 		"add new exercise"
 		normalList add: newExerciseName.
+		
 		"write list to file"
 		self writeListToFile: normalList.
+		
 		"update the morph with new element"
 		exerciseList update: #loadExercisesFromFile.
 	].
@@ -51,6 +54,11 @@ ExerciseMenu >> initialize [
 		target: self;
 		actionSelector: #addNewExercise;
 		openInWorld.
+	removeExerciseButton := SimpleButtonMorph new
+		label: 'Delete selected';
+		target: self;
+		actionSelector: #removeExercise;
+		openInWorld.
 	
 	addBackButton := SimpleButtonMorph new
 		label: 'Back';
@@ -65,7 +73,8 @@ ExerciseMenu >> initialize [
 		openInWorld.
 		
 	window addMorph: exerciseList frame: (0.1@0.1 corner: 0.6@0.7).	
-	window addMorph: openSelectedButton frame: (0.65@0.35 corner: 0.85@0.5).
+	window addMorph: openSelectedButton frame: (0.65@0.3 corner: 0.85@0.4).
+	window addMorph: removeExerciseButton frame: (0.65@0.45 corner: 0.85@0.55).
 	window addMorph: addExerciseButton frame: (0.1@0.72 corner: 0.6@0.82).
 	window addMorph: addBackButton frame: (0.1@0.83 corner: 0.6@0.93).
 
@@ -102,12 +111,12 @@ ExerciseMenu >> openMainMenu [
 	mainMenuwindow := MainMenu new.
 	mainMenuwindow openInWorld.
 	
-	window delete
+	window delete.
+	self delete.
 ]
 
 { #category : #actions }
-ExerciseMenu >> openSelected [ 
-	"takes the value from the pluggable list and calls session menu passing that value"
+ExerciseMenu >> openSelected [
 	| sessionMenu exeName |
 
 	"returns if nothing is selected"
@@ -115,15 +124,33 @@ ExerciseMenu >> openSelected [
 		UIManager default inform: 'Please select an item first.'.
 		^ [ ].
 		].
-	
+	"get name of selectedItem"
 	exeName := (normalList at: selectedItem).
 	
 	"open session menu with the selected exercise"
 	sessionMenu := SessionMenu newSessionWithName: exeName.
-	
 	sessionMenu openInWorld.
 	
 	window delete.
+	self delete.
+]
+
+{ #category : #actions }
+ExerciseMenu >> removeExercise [
+	
+	"check if sI is in bounds or nil"
+	(selectedItem isNil
+		or: [ (selectedItem <= 0 or: [ selectedItem > normalList size ]) ])
+		ifTrue: [ ^ [  ] ].
+
+	"remove item from list"
+	normalList removeAt: selectedItem.
+
+	"write new list to file"
+	self writeListToFile: normalList.
+
+	"update visual"
+	exerciseList update: #loadExercisesFromFile
 ]
 
 { #category : #'pluggable menus' }
@@ -134,22 +161,21 @@ ExerciseMenu >> selectedItem [
 { #category : #'pluggable menus' }
 ExerciseMenu >> selectedItem: anItem [
 		
-		Transcript show: 'anItem in selectedItem: = '; show: anItem; cr.
-		
 		selectedItem := anItem.
 		self updateUI.
 ]
 
 { #category : #'pluggable menus' }
 ExerciseMenu >> updateSelection: anItem [
-		Transcript show: 'anItem = '; show: anItem; cr.
+
 		self selectedItem: anItem.
 		self updateUI.
 ]
 
 { #category : #'pluggable menus' }
 ExerciseMenu >> updateUI [
-	self update.
+
+	exerciseList update: #loadExercisesFromFile.
 ]
 
 { #category : #actions }
@@ -159,7 +185,11 @@ ExerciseMenu >> writeListToFile: aList [
 	"file path"
 	fileReference := 'exercises.txt' asFileReference.
 	
-	"write list to file"
+	"clear file"
+	fileReference binaryWriteStreamDo: [ :stream |
+		stream truncate.
+	].
+	"write new list into file"
 	fileReference writeStreamDo: [ :stream |
 		aList do: [ :each |
 			stream nextPutAll: each; cr. 

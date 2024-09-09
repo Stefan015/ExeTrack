@@ -7,6 +7,7 @@ Class {
 		'selectedItem',
 		'normalList',
 		'sessionList',
+		'removeSessionButton',
 		'addSessionButton',
 		'addBackButton'
 	],
@@ -32,8 +33,10 @@ SessionMenu class >> newSessionWithName: anExerciseName [
 SessionMenu >> addNewSession [ 
 	| weight repetitions sets session sessionNumber |
 	
+	"keep track of session number"
 	sessionNumber := normalList size + 1.
 	
+	"user input"
 	weight := UIManager default request: 'Enter the weight used in the session'.
 	weight ifNil: [ ^ [ ] ].
 	weight ifEmpty: [ UIManager default inform: 'Field left empty.'. ^ [ ] ].
@@ -46,10 +49,16 @@ SessionMenu >> addNewSession [
 	sets ifNil: [ ^ [ ] ].
 	sets ifEmpty: [ UIManager default inform: 'Field left empty.'. ^ [ ] ].
 
+	"create a string to be added to collection "
 	session := 'Session #', sessionNumber printString,' Weight used: ', weight,' Sets: ', sets,' Repetitions: ', repetitions.
-
+	
+	"add the new session "
 	normalList add: session.
+	
+	"write new list to file "
 	self writeListToFile: normalList.
+	
+	"update visual"	
 	sessionList update: #loadSessionData.
 
 ]
@@ -58,6 +67,7 @@ SessionMenu >> addNewSession [
 SessionMenu >> ensureDirectoryExists: directoryPath [
 	| directoryReference |
 	
+	"check if directory exists if not create a new one"
 	directoryReference := directoryPath asFileReference.
 	directoryReference isDirectory
 		ifTrue: [ ^ self ].
@@ -68,6 +78,7 @@ SessionMenu >> ensureDirectoryExists: directoryPath [
 { #category : #'set and get' }
 SessionMenu >> getDirectoryPath [
 	| directoryPath |
+	
 	directoryPath :=  (FileSystem workingDirectory) / 'exercises'.
 	^ directoryPath.
 ]
@@ -96,10 +107,13 @@ SessionMenu >> initialize [
 SessionMenu >> loadSessionData [
 		| directoryPath fileReference filePath contents |
 	
+	"initialize list "
 	normalList := OrderedCollection new.
 	
+	"get path"
 	directoryPath := self getDirectoryPath.
 	
+	"create dir if needed"
 	self ensureDirectoryExists: directoryPath .
 	
 	"file path"
@@ -132,7 +146,26 @@ SessionMenu >> openExerciseMenu [
 	mainMenuwindow := ExerciseMenu new.
 	mainMenuwindow openInWorld.
 	
-	window delete
+	window delete.
+	self delete.
+]
+
+{ #category : #actions }
+SessionMenu >> removeSession [
+	
+	"check if SI is within bounds or nil"
+	(selectedItem isNil
+		or: [ (selectedItem <= 0 or: [ selectedItem > normalList size ]) ])
+		ifTrue: [ ^ [  ] ].
+	
+	"remove the element from list"
+	normalList removeAt: selectedItem.
+	
+	"write the new list without item"
+	self writeListToFile: normalList.
+	
+	"update visual"
+	sessionList update: #loadSessionData.
 ]
 
 { #category : #'pluggable menus' }
@@ -144,6 +177,7 @@ SessionMenu >> selectedItem [
 SessionMenu >> selectedItem: anItem [
 
 		selectedItem := anItem.
+		self updateUI.
 ]
 
 { #category : #'set and get' }
@@ -171,10 +205,17 @@ SessionMenu >> setupUIComponents [
 		target: self;
 		actionSelector: #openExerciseMenu;
 		openInWorld.
+	
+	removeSessionButton := SimpleButtonMorph new
+		label: 'Delete selected';
+		target: self;
+		actionSelector: #removeSession;
+	openInWorld.
 
 
 	window addMorph: sessionList frame: (0.1@0.1 corner: 0.9@0.6).
-	window addMorph: addBackButton frame: (0.1@0.74 corner: 0.9@0.84).
+	window addMorph: addBackButton frame: (0.1@0.86 corner: 0.9@0.96).
+	window addMorph: removeSessionButton frame: (0.1@0.74 corner: 0.9@0.84).
 	window addMorph: addSessionButton frame: (0.1@0.62 corner: 0.9@0.72).
 
 	window openInWorld.
@@ -193,13 +234,24 @@ SessionMenu >> updateSelection: anItem [
 		self selectedItem: anItem.
 ]
 
+{ #category : #'pluggable menus' }
+SessionMenu >> updateUI [
+	sessionList  update: #loadSessionData.
+]
+
 { #category : #actions }
 SessionMenu >> writeListToFile: aList [
 	| fileReference filePath |
 	
+	"get file path"
 	filePath := self getFilePath.
 	fileReference := filePath asFileReference.
 	
+	"clear file before writing"
+	fileReference binaryWriteStreamDo: [ :stream |
+		stream truncate.
+	].
+
 	"write list to file"
 	fileReference writeStreamDo: [ :stream |
 		aList do: [ :each |

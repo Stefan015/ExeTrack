@@ -33,8 +33,8 @@ MainMenu >> initialize [
 		actionSelector: #exitApplication;
 		openInWorld.
 
-	window addMorph: exercisesButton frame: (0.3@0.45 corner: 0.7@0.55).
-	window addMorph: exitButton frame: (0.3@0.35 corner: 0.7@0.45). 
+	window addMorph: exercisesButton frame: (0.25@0.3 corner: 0.75@0.5). 
+	window addMorph: exitButton frame: (0.3@0.65 corner: 0.7@0.75).
 
 	window openInWorld.
 ]
@@ -47,4 +47,5 @@ MainMenu >> openExerciseMenu [
 	exerciseMenu openInWorld.
 	
 	window delete.
+	self delete.
 ]
